@@ -70,6 +70,12 @@
     button:hover {
       background: #2563eb;
     }
+    #clearAllBtn {
+      background: #ef4444;
+      margin: 10px;
+      border-radius: 10px;
+      align-self: center;
+    }
   </style>
 </head>
 <body>
@@ -82,54 +88,73 @@
     <button id="sendBtn"><i class="fa-solid fa-paper-plane"></i></button>
   </footer>
 
-  <!-- Firebase -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
+  <button id="clearAllBtn">Очистить всё</button>
 
-    // ⚙️ Твой Firebase Config (вставь свой!)
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded, onChildRemoved, remove } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+
+    // 🔥 Твоя конфигурация Firebase
     const firebaseConfig = {
-    apiKey: "AIzaSyCvPqWuVmL3x7lGfkUV-ma1UHmz7rx__Rs",
-    authDomain: "marsspace-48b62.firebaseapp.com",
-    databaseURL: "https://marsspace-48b62-default-rtdb.firebaseio.com",
-    projectId: "marsspace-48b62",
-    storageBucket: "marsspace-48b62.firebasestorage.app",
-    messagingSenderId: "983536140625",
-    appId: "1:983536140625:web:084c07906ea2d9bfced370",
-    measurementId: "G-VDHG39ZRR1"
-  };
+      apiKey: "AIzaSyAzC7OSE_QYgHDIpICPvy9n0Ab3h89sp-w",
+      authDomain: "mafonlineeducation.firebaseapp.com",
+      databaseURL: "https://mafonlineeducation-default-rtdb.firebaseio.com",
+      projectId: "mafonlineeducation",
+      storageBucket: "mafonlineeducation.firebasestorage.app",
+      messagingSenderId: "184000822097",
+      appId: "1:184000822097:web:ab02c34fd5d358d723f170"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const chatRef = ref(db, "chatMessages");
-
+    const chatRef = ref(db, "chat");
     const chatBox = document.getElementById("chatBox");
     const msgInput = document.getElementById("msgInput");
     const sendBtn = document.getElementById("sendBtn");
 
-    const username = localStorage.getItem("username") || prompt("Введите ваше имя:");
-    localStorage.setItem("username", username);
+    // имя пользователя
+    let username = localStorage.getItem("username");
+    if (!username) {
+      username = prompt("Введите ваше имя:") || "Аноним";
+      localStorage.setItem("username", username);
+    }
 
-    // Отправка сообщения
-    sendBtn.addEventListener("click", () => {
+    // отправка сообщения
+    sendBtn.addEventListener("click", async () => {
       const text = msgInput.value.trim();
       if (!text) return;
-      push(chatRef, {
+
+      await push(chatRef, {
         user: username,
-        text,
-        time: new Date().toLocaleTimeString()
+        text: text,
+        time: Date.now()
       });
       msgInput.value = "";
     });
 
-    // Получение сообщений
+    // показываем новые сообщения мгновенно
     onChildAdded(chatRef, (snapshot) => {
       const msg = snapshot.val();
       const div = document.createElement("div");
       div.className = "message" + (msg.user === username ? " my" : "");
       div.textContent = `${msg.user}: ${msg.text}`;
+      div.dataset.key = snapshot.key;
       chatBox.appendChild(div);
       chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // удаляем из DOM, если из Firebase удалено
+    onChildRemoved(chatRef, (snapshot) => {
+      const key = snapshot.key;
+      const msgDiv = chatBox.querySelector(`[data-key="${key}"]`);
+      if (msgDiv) msgDiv.remove();
+    });
+
+    // кнопка очистки чата
+    document.getElementById("clearAllBtn").addEventListener("click", async () => {
+      localStorage.clear();
+      await remove(chatRef);
+      location.reload();
     });
   </script>
 </body>
