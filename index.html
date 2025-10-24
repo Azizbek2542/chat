@@ -115,7 +115,7 @@
     // имя пользователя
     let username = localStorage.getItem("username");
     if (!username) {
-      username = prompt("Введите ваше имя:") || "Аноним";
+      username = prompt("Введите ваше имя:") || "Имя: не указана";
       localStorage.setItem("username", username);
     }
 
@@ -159,3 +159,4 @@
   </script>
 </body>
 </html>
+
